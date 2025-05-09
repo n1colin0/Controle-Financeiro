@@ -1,0 +1,231 @@
+:root {
+    --primary-color: #2ecc71;
+    --primary-hover: #27ae60;
+    --error-color: #e74c3c;
+    --error-hover: #c0392b;
+    --border-color: #444;
+    --text-color: #e0e0e0;
+    --background-color: #1a1a1a;
+    --container-bg: #2c2c2c;
+    --list-bg: #3a3a3a;
+    --shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    --transition: all 0.3s ease;
+  }
+  
+  body.dark-mode {
+    --primary-color: #27ae60;
+    --primary-hover: #219653;
+    --error-color: #c0392b;
+    --error-hover: #a93226;
+    --border-color: #666;
+    --text-color: #e0e0e0;
+    --background-color: #1a1a1a;
+    --container-bg: #2c2c2c;
+    --list-bg: #3a3a3a;
+    --shadow: 0 4px 15px rgba(0, 0, 0, 0.7);
+  }
+  
+  body {
+    font-family: 'Arial', sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    padding: 20px;
+    margin: 0;
+    transition: var(--transition);
+  }
+  
+  .container {
+    max-width: 700px;
+    margin: 20px auto;
+    background: var(--container-bg);
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: var(--shadow);
+    box-sizing: border-box;
+  }
+  
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  
+  h1, h2 {
+    color: var(--text-color);
+    margin: 0;
+  }
+  
+  h1 {
+    font-size: 28px;
+  }
+  
+  h2 {
+    font-size: 20px;
+    text-align: center;
+    margin-bottom: 15px;
+  }
+  
+  #theme-toggle {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--text-color);
+    transition: var(--transition);
+  }
+  
+  #month-select {
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--list-bg);
+    color: var(--text-color);
+    transition: var(--transition);
+  }
+  
+  form {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 25px;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  form input,
+  form select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 14px;
+    background: var(--list-bg);
+    color: var(--text-color);
+    transition: var(--transition);
+    box-sizing: border-box;
+  }
+  
+  form input:focus,
+  form select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 5px rgba(46, 204, 113, 0.5);
+  }
+  
+  form select:disabled {
+    background: var(--list-bg);
+    opacity: 0.7;
+  }
+  
+  button {
+    grid-column: span 4;
+    width: 100%;
+    padding: 12px;
+    background-color: var(--primary-color);
+    border: none;
+    color: white;
+    cursor: pointer;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: var(--transition);
+    text-transform: uppercase;
+    box-sizing: border-box;
+  }
+  
+  button:hover {
+    background-color: var(--primary-hover);
+  }
+  
+  .saldo {
+    text-align: center;
+    font-size: 26px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: var(--text-color);
+    padding: 10px;
+    background: var(--list-bg);
+    border-radius: 8px;
+  }
+  
+  #transacoes {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 20px 0;
+  }
+  
+  #transacoes li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--list-bg);
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    border-left: 6px solid;
+    transition: var(--transition);
+  }
+  
+  #transacoes li:hover {
+    transform: translateX(5px);
+  }
+  
+  .entrada {
+    border-color: var(--primary-color);
+  }
+  
+  .saida {
+    border-color: var(--error-color);
+  }
+  
+  .delete-btn {
+    background: var(--error-color);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: var(--transition);
+  }
+  
+  .delete-btn:hover {
+    background: var(--error-hover);
+  }
+  
+  .chart-container {
+    margin-top: 20px;
+    padding: 20px;
+    background: var(--list-bg);
+    border-radius: 15px;
+    box-shadow: var(--shadow);
+  }
+  
+  #expenseChart {
+    max-height: 300px;
+    width: 100%;
+  }
+  
+  @media (max-width: 600px) {
+    form {
+      grid-template-columns: 1fr;
+    }
+    button {
+      grid-column: span 1;
+    }
+    .container {
+      padding: 15px;
+    }
+    h1 {
+      font-size: 24px;
+    }
+    .saldo {
+      font-size: 22px;
+    }
+    .chart-container {
+      padding: 15px;
+    }
+    #month-select {
+      width: 100%;
+    }
+  }
