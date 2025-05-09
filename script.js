@@ -148,18 +148,18 @@ function sendReport() {
 
   // Depuração detalhada
   console.log('--- Início do Envio de Email ---');
-  console.log('Service ID:', 'service_8nxu4e7');
-  console.log('Template ID:', 'template_pk2r2fb');
+  console.log('Service ID:', '(insira aqui o service ID do EmailJS)');
+  console.log('Template ID:', '(insira aqui o template ID do EmailJS)');
   console.log('Parâmetros Enviados:', {
     name: 'Usuário',
-    email: 'nicolassantossilva2458@gmail.com',
+    email: '(insira aqui o email do destinatário)',
     message: messageContent,
     time: time
   });
 
-  emailjs.send('service_8nxu4e7', 'template_pk2r2fb', {
+  emailjs.send('(insira aqui o service ID do EmailJS)', '(insira aqui o template ID do EmailJS)', {
     name: 'Usuário',
-    email: 'nicolassantossilva2458@gmail.com',
+    email: '(insira aqui o email do destinatário)',
     message: messageContent,
     time: time
   }).then((response) => {
