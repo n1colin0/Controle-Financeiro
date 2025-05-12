@@ -3,7 +3,7 @@ const transacoes = document.getElementById('transacoes');
 const saldo = document.getElementById('saldo');
 const tipoSelect = document.getElementById('tipo');
 const categoriaSelect = document.getElementById('categoria');
-const finalizeMonthBtn = document.getElementById('finalize-month');
+const generateReportBtn = document.getElementById('generate-report');
 
 let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
 let total = transactions.reduce((acc, t) => acc + (t.tipo === 'entrada' ? t.valor : -t.valor), 0);
@@ -26,15 +26,17 @@ const expenseChart = new Chart(ctx, {
       legend: { position: 'top', labels: { color: '#e0e0e0' } },
       tooltip: {
         callbacks: {
-          label: context => `${context.label}: R$ ${context.raw.toFixed(2).replace('.', ',')}`
+          label: function(context) {
+            const value = context.raw;
+            const total = context.dataset.data.reduce((sum, val) => sum + val, 0);
+            const percentage = total > 0 ? ((value / total) * 100).toFixed(2) : 0;
+            return `${context.label}: R$ ${value.toFixed(2).replace('.', ',')} (${percentage}%)`;
+          }
         }
       }
     }
   }
 });
-
-// Removida a inicialização do EmailJS aqui, já que está no index.html
-// emailjs.init('kPLFHY3nTlD_QXygv');
 
 function formatCurrency(value) {
   return `R$ ${value.toFixed(2).replace('.', ',')}`;
@@ -106,76 +108,122 @@ function generateReport(month) {
     .reduce((sum, t) => sum + t.valor, 0);
   const saldoFinal = totalEntradas - totalSaidas;
 
-  // Relatório em texto simples para compatibilidade com EmailJS
-  let report = `Relatório Financeiro - ${month}\n\n`;
-  report += `Entradas: ${formatCurrency(totalEntradas)}\n`;
-  report += `Saídas: ${formatCurrency(totalSaidas)}\n`;
-  report += `Saldo: ${formatCurrency(saldoFinal)}\n\n`;
-  report += `Transações:\n`;
-  monthTransactions.forEach(t => {
-    report += `- ${t.data} - ${t.descricao} - ${formatCurrency(t.valor)} (${t.tipo}${t.categoria ? ', ' + t.categoria : ''})\n`;
-  });
-
-  return report;
+  return {
+    summary: {
+      entradas: totalEntradas,
+      saidas: totalSaidas,
+      saldo: saldoFinal
+    },
+    transactions: monthTransactions
+  };
 }
 
-function generateChartSummary() {
+function generateChartSummary(month) {
   const categories = ['saude', 'lazer', 'alimentacao', 'transporte', 'outros'];
   const labels = ['Saúde', 'Lazer', 'Alimentação', 'Transporte', 'Outros'];
+  const monthTransactions = transactions.filter(t => t.data.startsWith(month));
+  const totalSaidas = monthTransactions
+    .filter(t => t.tipo === 'saida')
+    .reduce((sum, t) => sum + t.valor, 0);
   const data = categories.map(cat =>
-    transactions
+    monthTransactions
       .filter(t => t.tipo === 'saida' && t.categoria === cat)
       .reduce((sum, t) => sum + t.valor, 0)
   );
 
-  let summary = `Resumo do Gráfico de Gastos por Categoria:\n`;
+  const summary = {};
   data.forEach((value, index) => {
     if (value > 0) {
-      summary += `- ${labels[index]}: ${formatCurrency(value)}\n`;
+      const percentage = totalSaidas > 0 ? ((value / totalSaidas) * 100).toFixed(2) : 0;
+      summary[labels[index]] = { value, percentage };
     }
   });
   return summary;
 }
 
-function sendReport() {
+async function downloadReport() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
   const month = getCurrentMonth();
   const report = generateReport(month);
-  const chartSummary = generateChartSummary();
-  const time = getCurrentTime();
+  const chartSummary = generateChartSummary(month);
+  let y = 20;
 
-  // Concatenar todas as informações no campo "message"
-  const messageContent = `Relatório do Mês: ${month}\n\n${report}\n\n${chartSummary}`;
+  // Título
+  doc.setFontSize(16);
+  doc.text(`Relatório Financeiro - ${month}`, 20, y);
+  y += 10;
 
-  // Depuração detalhada
-  console.log('--- Início do Envio de Email ---');
-  console.log('Service ID:', '(insira aqui o service ID do EmailJS)');
-  console.log('Template ID:', '(insira aqui o template ID do EmailJS)');
-  console.log('Parâmetros Enviados:', {
-    name: 'Usuário',
-    email: '(insira aqui o email do destinatário)',
-    message: messageContent,
-    time: time
+  // Resumo Financeiro
+  doc.setFontSize(12);
+  doc.text(`Entradas: ${formatCurrency(report.summary.entradas)}`, 20, y);
+  y += 10;
+  doc.text(`Saídas: ${formatCurrency(report.summary.saidas)}`, 20, y);
+  y += 10;
+  doc.text(`Saldo: ${formatCurrency(report.summary.saldo)}`, 20, y);
+  y += 15;
+
+  // Transações
+  doc.text('Transações:', 20, y);
+  y += 10;
+  doc.setFontSize(10);
+  report.transactions.forEach(t => {
+    const categoria = t.categoria || '';
+    const line = `${t.data} - ${t.descricao} - ${formatCurrency(t.valor)} (${t.tipo}${categoria ? ', ' + categoria : ''})`;
+    const splitText = doc.splitTextToSize(line, 170);
+    doc.text(splitText, 20, y);
+    y += splitText.length * 6;
+    if (y > 260) {
+      doc.addPage();
+      y = 20;
+    }
   });
 
-  emailjs.send('(insira aqui o service ID do EmailJS)', '(insira aqui o template ID do EmailJS)', {
-    name: 'Usuário',
-    email: '(insira aqui o email do destinatário)',
-    message: messageContent,
-    time: time
-  }).then((response) => {
-    console.log('Sucesso:', response.status, response.text);
-    console.log('--- Fim do Envio de Email ---');
-    alert('Relatório enviado com sucesso!');
+  // Resumo do Gráfico
+  y += 10;
+  doc.setFontSize(12);
+  doc.text('Resumo do Gráfico de Gastos por Categoria:', 20, y);
+  y += 10;
+  doc.setFontSize(10);
+  Object.entries(chartSummary).forEach(([category, { value, percentage }]) => {
+    doc.text(`${category}: ${formatCurrency(value)} (${percentage}%)`, 20, y);
+    y += 6;
+    if (y > 260) {
+      doc.addPage();
+      y = 20;
+    }
+  });
+
+  // Capturar e adicionar o gráfico
+  const canvas = document.getElementById('expenseChart');
+  try {
+    const canvasImg = await html2canvas(canvas, { scale: 2 });
+    const imgData = canvasImg.toDataURL('image/png');
+    const imgWidth = 170;
+    const imgHeight = (canvasImg.height * imgWidth) / canvasImg.width;
+    y += 10;
+    if (y + imgHeight > 260) {
+      doc.addPage();
+      y = 20;
+    }
+    doc.addImage(imgData, 'PNG', 20, y, imgWidth, imgHeight);
+  } catch (error) {
+    console.error('Erro ao capturar o gráfico:', error);
+    doc.setFontSize(10);
+    doc.text('Não foi possível incluir o gráfico no relatório.', 20, y + 10);
+  }
+
+  // Salvar o PDF
+  doc.save(`relatorio_financeiro_${month}.pdf`);
+
+  // Opcional: Limpar transações do mês após download
+  if (confirm('Deseja limpar as transações do mês após gerar o relatório?')) {
     transactions = transactions.filter(t => !t.data.startsWith(month));
     saveTransactions();
     renderTransactions();
     updateSaldo();
     updateChart();
-  }).catch(error => {
-    console.error('Erro ao enviar relatório:', error);
-    console.log('--- Fim do Envio de Email (com erro) ---');
-    alert('Erro ao enviar relatório: ' + (error.text || error.message));
-  });
+  }
 }
 
 form.addEventListener('submit', (e) => {
@@ -214,9 +262,10 @@ tipoSelect.addEventListener('change', () => {
   categoriaSelect.disabled = tipoSelect.value !== 'saida';
 });
 
-finalizeMonthBtn.addEventListener('click', () => {
-  if (confirm('Deseja finalizar o mês e enviar o relatório?')) {
-    sendReport();
+generateReportBtn.addEventListener('click', () => {
+  if (confirm('Deseja gerar o relatório do mês atual?')) {
+    downloadReport();
+    alert('Relatório PDF gerado com sucesso! Você pode abrir o arquivo ou anexá-lo a um e-mail.');
   }
 });
 
